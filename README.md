@@ -24,7 +24,7 @@ JavaScript:
 
 Now the user can pan by clicking and dragging or zoom with the mouse wheel or pinch gestures.
 
-See also: example/example.html.
+See also: [example/example.html](http://jimkang.com/camera/example/example.html).
 
 License
 -------
