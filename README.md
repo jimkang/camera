@@ -7,6 +7,11 @@ Requirements
 ------------
 It depends on D3 v3 and a SVG hierarchy that includes an <svg> element as well as a <g> element under it that contains everything you want to be subject to zoom and pan.
 
+Installation
+------------
+
+    npm install svgcamera
+
 Usage
 -----
 
