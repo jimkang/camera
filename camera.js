@@ -5,8 +5,8 @@ var camera = {
   root: d3.select(rootGroupSelString),  
   zoomBehavior: null,
   scaleExtent: scaleExtent,
-  translate: null,
-  scale: null
+  translate: [0, 0],
+  scale: 1.0
 };
 
 function getActualHeight(el) {
