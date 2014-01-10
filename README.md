@@ -29,6 +29,10 @@ JavaScript:
 
 Now the user can pan by clicking and dragging or zoom with the mouse wheel or pinch gestures.
 
+To pan to an element (that uses the transform attribute for positioning):
+
+    camera.panToElement(d3.select('#the-target'), 750);
+
 See also: [example/example.html](http://jimkang.com/camera/example/example.html).
 
 License
