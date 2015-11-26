@@ -1,6 +1,6 @@
 {
   "name": "svgcamera",
-  "version": "0.5.0",
+  "version": "1.0.0",
   "description": "A component that lets you add zooming and panning to your SVG-based app.",
   "main": "camera.js",
   "scripts": {
