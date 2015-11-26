@@ -1,3 +1,5 @@
+module.exports = createCamera;
+
 function createCamera(svgSelString, rootGroupSelString, scaleExtent) {
 
 var camera = {
