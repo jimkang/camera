@@ -1,15 +1,28 @@
-module.exports = createCamera;
-
-function createCamera(svgSelString, rootGroupSelString, scaleExtent) {
+function createCamera(svgSelString, rootGroupSelString, scaleExtent, select, Zoom, scale, interpolate) {
+  if (typeof d3 === 'object') {
+    if (!select) {
+      select = d3.select;
+    }
+    if (!Zoom && d3.behavior) {
+      Zoom = d3?.behavior.zoom;
+    }
+    if (!scale) {
+      scale = d3.scale;
+    }
+    if (!interpolate) {
+      interpolate = d3.interpolate;
+    }
+  }
 
 var camera = {
-  board: d3.select(svgSelString), 
-  root: d3.select(rootGroupSelString),  
+  board: select(svgSelString), 
+  root: select(rootGroupSelString),  
   zoomBehavior: null,
   scaleExtent: scaleExtent,
   translate: [0, 0],
   scale: 1.0
 };
+
 
 function elWidth(el) {
   var width = el.clientWidth;
@@ -52,8 +65,21 @@ function translateYFromSel(sel) {
 // The behavior is connected to the <svg> rather than the <g> because then
 // dragging-to-pan doesn't work otherwise. Maybe something cannot be 
 // transformed while it is receiving drag events?
-camera.syncZoomEventToTransform = function syncZoomEventToTransform() {
-  this.updateTransform(d3.event.translate, d3.event.scale);
+camera.syncZoomEventToTransform = function syncZoomEventToTransform(zoomEvent) {
+  if (!zoomEvent) {
+    zoomEvent = d3.event;
+  }
+  var translate = zoomEvent.translate;
+  var scale = zoomEvent.scale;
+
+  if (!translate && zoomEvent.transform) {
+    translate = `${zoomEvent.transform.x}, ${zoomEvent.transform.y}`;
+  }
+  if (!scale && zoomEvent.transform) {
+    scale = zoomEvent.transform.k;
+  }
+
+  this.updateTransform(translate, scale);
 };
 
 camera.updateTransform = function updateTransform(translate, scale) {
@@ -89,15 +115,15 @@ camera.panToElement = function panToElement(opts, done) {
 
 // Expects this.scale to be set.
 camera.panToCenterOnRect = function panToCenterOnRect(opts, done) {
+  var boardWidth = elWidth(camera.board.node());
+  var boardHeight = elHeight(camera.board.node());
+
   if (!opts.duration) {
     opts.duration = 300;
   }
   if (!opts.scale) {
     opts.scale = this.scale;
   }
-
-  var boardWidth = elWidth(this.board.node());
-  var boardHeight = elHeight(this.board.node());
 
   this.tweenToZoom(opts.scale, 
     [(-opts.rect.x - opts.rect.width/2 + boardWidth/2), 
@@ -111,17 +137,34 @@ camera.panToCenterOnRect = function panToCenterOnRect(opts, done) {
 // the translation.
 // Expects this.scale and this.translate to be set.
 camera.tweenToZoom = function tweenToZoom(scale, translate, time, done) {
+  var boardWidth = elWidth(camera.board.node());
+  var boardHeight = elHeight(camera.board.node());
+
   function createZoomExecutor() {
-    var interpolateScale = d3.interpolate(this.scale, scale);
-    var interpolateTranslation = d3.interpolate(this.translate, translate);
+    if (typeof interpolate === 'function') {
+      var interpolateScale = interpolate(this.scale, scale);
+      var interpolateTranslation = interpolate(this.translate, translate);
+    } else {
+      var interpZoom = interpolate.interpolateZoom([this.translate[0], this.translate[1], boardWidth], [translate[0], translate[1], boardWidth]);
+      interpZoom.duration = time;
+    }
 
     function executeZoomForTimeStep(t) {
-      // Update the behavior so that the next time it is altered, it proceeds 
-      // from this state instead of from the last time the mouse was moved.
-      var currentScale = interpolateScale(t);
-      this.zoomBehavior.scale(currentScale);
-      var currentTranslate = interpolateTranslation(t);
-      this.zoomBehavior.translate(currentTranslate);
+      var currentScale;
+      var currentTranslate;
+      if (interpolateScale && interpolateTranslation) {
+        currentScale = interpolateScale(t);
+        currentTranslate = interpolateTranslation(t);
+        // Update the behavior so that the next time it is altered, it proceeds 
+        // from this state instead of from the last time the mouse was moved.
+        this.zoomBehavior.scale(currentScale);
+        this.zoomBehavior.translate(currentTranslate);
+      } else if (interpZoom) {
+        const view = interpZoom(t);
+        currentScale = Math.min(boardWidth, boardHeight) / view[2];
+        currentTranslate = [boardWidth / 2 - view[0] * currentScale, boardHeight / 2 - view[1] * currentScale];
+        this.zoomBehavior.
+      }
 
       // Update the transform to make the changes in scale and translation 
       // appear.
@@ -139,15 +182,15 @@ camera.tweenToZoom = function tweenToZoom(scale, translate, time, done) {
   }
 };
 
-
 function init() {
   var width = elWidth(camera.board.node());
   var height = elHeight(camera.board.node());
 
-  var x = d3.scale.identity().domain([0, width]);
-  var y = d3.scale.linear().domain([0, height]).range([height, 0]);
+  var x = (scale.identity ? scale.identity() : scale.scaleIdentity()).domain([0, width]);
+  var y = (scale.linear ? scale.linear : scale.scaleLinear)().domain([0, height]).range([height, 0]);
 
-  camera.zoomBehavior = d3.behavior.zoom().x(x).y(y)
+  var zoom = Zoom();
+  camera.zoomBehavior = zoom
     .scaleExtent(camera.scaleExtent)
     .on('zoom', camera.syncZoomEventToTransform.bind(camera));
   
@@ -159,4 +202,8 @@ function init() {
 init();
 
 return camera;
+}
+
+if (typeof module === 'object') {
+  module.exports = createCamera;
 }
