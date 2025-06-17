@@ -1,18 +1,4 @@
-function createCamera(svgSelString, rootGroupSelString, scaleExtent, select, Zoom, scale, interpolate) {
-  if (typeof d3 === 'object') {
-    if (!select) {
-      select = d3.select;
-    }
-    if (!Zoom && d3.behavior) {
-      Zoom = d3?.behavior.zoom;
-    }
-    if (!scale) {
-      scale = d3.scale;
-    }
-    if (!interpolate) {
-      interpolate = d3.interpolate;
-    }
-  }
+function createCamera({ svgSelString, rootGroupSelString, scaleExtent, select, Zoom, scale, interpolate }) {
 
 var camera = {
   board: select(svgSelString), 
@@ -66,9 +52,6 @@ function translateYFromSel(sel) {
 // dragging-to-pan doesn't work otherwise. Maybe something cannot be 
 // transformed while it is receiving drag events?
 camera.syncZoomEventToTransform = function syncZoomEventToTransform(zoomEvent) {
-  if (!zoomEvent) {
-    zoomEvent = d3.event;
-  }
   var translate = zoomEvent.translate;
   var scale = zoomEvent.scale;
 
